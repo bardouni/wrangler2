@@ -937,6 +937,29 @@ export async function main(argv: string[]): Promise<void> {
 
       // TODO: if worker_dev = false and no routes, then error (only for dev)
 
+      function collectAllRoutes() {
+        const allRoutes: string[] = [];
+        if (typeof config.route === "object") {
+          allRoutes.push(config.route.pattern);
+        }
+        if (typeof args.routes !== "undefined") {
+          allRoutes.push(...args.routes);
+        }
+        if (typeof config.routes !== "undefined") {
+          config.routes.map((route) => {
+            if (typeof route === "object") {
+              allRoutes.push(route.pattern);
+            }
+            if (typeof route === "string") {
+              allRoutes.push(route);
+            }
+          });
+        }
+        return allRoutes.length
+          ? allRoutes.filter((route) => !!route)
+          : undefined;
+      }
+
       /**
        * Given something that resembles a URL,
        * try to extract a host from it
@@ -976,7 +999,7 @@ export async function main(argv: string[]): Promise<void> {
       // get a zone id for it, by lopping off subdomains until we get a hit
       // from the API. That's it!
 
-      let zone: { host: string; id: string } | undefined;
+      let zone: { host: string; id: string; routes?: string[] } | undefined;
 
       if (!args.local) {
         const hostLike =
@@ -1017,6 +1040,7 @@ export async function main(argv: string[]): Promise<void> {
             ? {
                 host,
                 id: zoneId,
+                routes: collectAllRoutes(),
               }
             : undefined;
       }
